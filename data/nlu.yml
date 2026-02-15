@@ -1,0 +1,43 @@
+version: "3.1"
+
+nlu:
+- intent: saudacao
+  examples: |
+    - oi
+    - olá
+    - bom dia
+    - boa tarde
+    - boa noite
+
+- intent: despedida
+  examples: |
+    - tchau
+    - até logo
+    - adeus
+
+- intent: confirmar_medicacao
+  examples: |
+    - já tomei
+    - tomei o remédio
+    - acabei de tomar
+    - sim, tomei
+    - tá tomado
+
+- intent: negar_medicacao
+  examples: |
+    - ainda não
+    - esqueci
+    - não tomei
+    - não
+    - não bebi ainda
+
+- intent: perguntar_horario
+  examples: |
+    - que horas são?
+    - que horas eu tomo o remédio?
+    - qual o próximo medicamento?
+    - tenho remédio agora?
+    - hora do remédio
+    - verificar horário
+    - estou no horário?
+    - quando é o próximo?

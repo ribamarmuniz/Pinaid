@@ -1,0 +1,22 @@
+version: "3.1"
+
+stories:
+
+- story: caminho feliz - tomou o remedio
+  steps:
+  - intent: saudacao
+  - action: utter_saudacao
+  - intent: confirmar_medicacao
+  - action: utter_confirmacao
+
+- story: caminho triste - esqueceu o remedio
+  steps:
+  - intent: saudacao
+  - action: utter_saudacao
+  - intent: negar_medicacao
+  - action: utter_alerta
+
+- story: apenas tchau
+  steps:
+  - intent: despedida
+  - action: utter_despedida

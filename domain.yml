@@ -1,0 +1,32 @@
+version: "3.1"
+
+intents:
+  - saudacao
+  - despedida
+  - confirmar_medicacao
+  - negar_medicacao
+  - perguntar_horario
+  - gatilho_externo_lembrete
+
+responses:
+  utter_saudacao:
+  - text: "Olá! Sou sua assistente virtual do PIBIC. Como posso ajudar com seus remédios hoje?"
+
+  utter_despedida:
+  - text: "Até logo! Lembre-se de beber água e descansar."
+
+  utter_confirmacao:
+  - text: "Ótimo! Fico feliz que você tomou sua medicação direitinho. Já registrei aqui."
+
+  utter_alerta:
+  - text: "Atenção! É muito importante seguir o horário. Por favor, tome seu remédio agora se possível."
+  
+  utter_lembrete_automatico:
+  - text: "Dona Maria, atenção! O sistema detectou que é hora do seu medicamento. Por favor, confirme a ingestão."
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true
+
+actions:
+  - action_verificar_horario

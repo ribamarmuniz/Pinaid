@@ -1,0 +1,15 @@
+# Ambientes virtuais
+venv/
+env/
+.env
+
+# Arquivos compilados do Python
+__pycache__/
+*.pyc
+
+# Pastas de cache do projeto
+cache_pulseira/
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db

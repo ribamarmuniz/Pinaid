@@ -1,0 +1,14 @@
+{
+    "usuario": "Dona Maria",
+    "versao": "2.0",
+    "medicamentos": [
+        {
+            "id": 1,
+            "nome": "Losartana",
+            "dose": "50mg",
+            "instrucao": "Tomar 1 cp",
+            "horario": "08:00",
+            "img_arquivo": "remedio_1.jpg"
+        }
+    ]
+}

@@ -1,347 +1,417 @@
 import pygame
-import requests # BIBLIOTECA DE REDE
-import json
-import datetime
+import requests
+import sys
+import threading
+import time
 import math
-import os
-import io # Para ler bytes da imagem baixada
+from datetime import datetime
 
-# ============================================================
-#  CONFIGURAÇÕES DE REDE (IOT)
-# ============================================================
-URL_SERVIDOR = "http://127.0.0.1:5000" # Endereço do Servidor Python
-TIMEOUT_REQ = 3 # Segundos para timeout
+SERVIDOR_URL = "http://127.0.0.1:5000"
 
-# ============================================================
-#  HARDWARE - Display ST7735 (128x160)
-# ============================================================
-LARGURA = 128
-ALTURA = 160
-SCALE = 3
-PASTA_CACHE = "cache_pulseira" # Pasta temporária da pulseira
+ESCALA = 2
+REAL_W = 128
+REAL_H = 160
+LARGURA = REAL_W * ESCALA
+ALTURA = REAL_H * ESCALA
+FPS = 30
+INTERVALO_CHECK = 30
+TEMPO_REALARME = 300
 
-if not os.path.exists(PASTA_CACHE): os.makedirs(PASTA_CACHE)
+# Paleta profissional
+COR_FUNDO = (15, 15, 25)
+COR_FUNDO_CARD = (28, 28, 45)
+COR_AZUL = (70, 150, 255)
+COR_AZUL_HOVER = (100, 170, 255)
+COR_VERDE = (60, 210, 100)
+COR_VERDE_HOVER = (80, 230, 120)
+COR_VERMELHO = (255, 80, 80)
+COR_AMARELO = (255, 215, 60)
+COR_AMARELO_HOVER = (255, 225, 100)
+COR_BRANCO = (240, 240, 250)
+COR_CINZA = (130, 130, 150)
+COR_CINZA_ESCURO = (70, 70, 90)
+COR_ALARME_1 = (60, 15, 15)
+COR_ALARME_2 = (40, 10, 10)
+COR_BARRA = (45, 45, 70)
 
-# ============================================================
-#  PALETA DE CORES
-# ============================================================
-BG_DEEP       = (10, 12, 18)
-BG_CARD       = (25, 30, 40)
-AZUL_ICE      = (100, 200, 255)
-MENTA         = (72, 219, 160)
-LARANJA       = (255, 140, 0)
-BRANCO        = (255, 255, 255)
-CINZA_CLARO   = (200, 200, 200)
-CINZA_ESCURO  = (80, 80, 80)
-AMARELO_OURO  = (255, 215, 0)
-VERMELHO_ERRO = (200, 50, 50)
 
-# ============================================================
-#  ESTADOS
-# ============================================================
-TELA_SETUP      = -1
-TELA_RELOGIO    = 0
-TELA_ALERTA     = 1
-TELA_FOTO_FULL  = 2
-TELA_CONFIRMADO = 3
-TELA_SYNC       = 4 # Nova tela: Sincronizando
+class Estado:
+    def __init__(self):
+        self.agenda = []
+        self.config = {"horario_sono_inicio": "23:00", "horario_sono_fim": "07:00"}
+        self.paciente = ""
+        self.conectada = False
+        self.tela = "inicio"
+        self.alarme_ativo = False
+        self.alarme_med = None
+        self.alarme_viu = False
+        self.alarme_tomou = False
+        self.alarme_inicio = None
+        self.vibrando = False
+        self.ciclo = 0
+        self.alertados = set()
+        self.sync = None
+        self.msg = ""
+        self.msg_t = 0
+        self.frame = 0
 
-estado_atual = TELA_SETUP 
-medicamento_atual = None
-img_medicamento_cache = None
-soneca_ativa = False
-tempo_inicio_soneca = 0
-inicio_confirmacao = 0
-TEMPO_SONECA_TESTE = 10
-erro_conexao = False # Flag para mostrar erro se o servidor cair
 
-pygame.init()
-tela_display = pygame.display.set_mode((LARGURA * SCALE, ALTURA * SCALE))
-pygame.display.set_caption("Pulseira IoT - Cliente HTTP")
-clock = pygame.time.Clock()
+e = Estado()
 
-# Fontes
-fonte_hora      = pygame.font.SysFont("arial", 42, bold=True)
-fonte_titulo    = pygame.font.SysFont("arial", 14, bold=True)
-fonte_dado      = pygame.font.SysFont("arial", 17, bold=True)
-fonte_med_nome  = pygame.font.SysFont("arial", 20, bold=True)
-fonte_med_dose  = pygame.font.SysFont("arial", 14, bold=True)
-fonte_botao     = pygame.font.SysFont("arial", 16, bold=True)
-fonte_mini      = pygame.font.SysFont("arial", 10)
 
-agenda = [] # Começa vazia, será preenchida pela REDE
+def hmin(h):
+    p = h.split(":")
+    return int(p[0]) * 60 + int(p[1])
 
-# ============================================================
-#  FUNÇÕES DE REDE (O "CÉREBRO" DA CONEXÃO)
-# ============================================================
 
-def sincronizar_dados():
-    """Simula o ESP32 conectando no Wi-Fi e baixando JSON"""
-    global agenda, erro_conexao
-    print("[IOT] Conectando ao servidor...")
-    
+def nsono(h, c):
+    si = hmin(c.get("horario_sono_inicio", "23:00"))
+    sf = hmin(c.get("horario_sono_fim", "07:00"))
+    v = hmin(h)
+    return (v >= si or v < sf) if si > sf else (si <= v < sf)
+
+
+def buscar():
     try:
-        # 1. Baixa o JSON
-        resp = requests.get(f"{URL_SERVIDOR}/api/agenda", timeout=TIMEOUT_REQ)
-        if resp.status_code == 200:
-            dados = resp.json()
-            agenda = dados.get('medicamentos', [])
-            print(f"[IOT] Agenda atualizada! {len(agenda)} itens.")
-            erro_conexao = False
+        r = requests.get(f"{SERVIDOR_URL}/api/agenda", timeout=5)
+        if r.status_code == 200:
+            d = r.json()
+            e.agenda = d.get("medicamentos", [])
+            e.config = d.get("configuracoes", e.config)
+            e.paciente = d.get("paciente", {}).get("nome", "")
+            e.conectada = True
+            e.sync = datetime.now()
             return True
-        else:
-            print(f"[ERRO] Servidor respondeu: {resp.status_code}")
-            erro_conexao = True
-            return False
-            
-    except Exception as e:
-        print(f"[ERRO] Falha na conexão: {e}")
-        erro_conexao = True
-        return False
-
-def baixar_imagem(nome_arquivo):
-    """Baixa a imagem via HTTP e salva no Cache local"""
-    if not nome_arquivo: return None
-    
-    caminho_local = os.path.join(PASTA_CACHE, nome_arquivo)
-    
-    # Se já temos no cache, não gasta dados baixando de novo
-    if os.path.exists(caminho_local):
-        print(f"[CACHE] Imagem carregada do disco: {nome_arquivo}")
-        return pygame.image.load(caminho_local)
-        
-    print(f"[IOT] Baixando imagem nova: {nome_arquivo}...")
-    try:
-        url = f"{URL_SERVIDOR}/api/imagens/{nome_arquivo}"
-        resp = requests.get(url, timeout=TIMEOUT_REQ)
-        if resp.status_code == 200:
-            # Salva no disco (Cache)
-            with open(caminho_local, 'wb') as f:
-                f.write(resp.content)
-            # Carrega para memória
-            img_bytes = io.BytesIO(resp.content)
-            return pygame.image.load(img_bytes)
     except:
-        print("[ERRO] Falha ao baixar imagem.")
-    return None
+        e.conectada = False
+    return False
 
-def enviar_confirmacao(medicamento):
-    """Envia POST para o servidor avisando que tomou"""
-    payload = {
-        "usuario": "user_01",
-        "medicamento": medicamento['nome'],
-        "horario_real": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "status": "TOMADO"
-    }
+
+def confirmar(med):
     try:
-        requests.post(f"{URL_SERVIDOR}/api/confirmar", json=payload, timeout=1)
-        print("[IOT] Confirmação enviada para a nuvem!")
+        r = requests.post(f"{SERVIDOR_URL}/api/confirmar", json={
+            "medicamento": med["nome"], "horario": med["horario"],
+            "horario_real": datetime.now().strftime("%H:%M:%S"),
+            "data": datetime.now().strftime("%d/%m/%Y"),
+        }, timeout=5)
+        if r.status_code == 200:
+            buscar()
     except:
-        print("[IOT] Sem internet. Log salvo localmente (Simulado).")
+        pass
 
-# ============================================================
-#  INTERFACE GRÁFICA
-# ============================================================
 
-def rounded_rect(surface, cor, rect, radius=8):
-    pygame.draw.rect(surface, cor, rect, border_radius=radius)
+def alarmar(med):
+    e.alarme_ativo = True
+    e.alarme_med = med
+    e.alarme_viu = False
+    e.alarme_tomou = False
+    e.alarme_inicio = datetime.now()
+    e.vibrando = True
+    e.ciclo = 0
+    e.tela = "alarme"
 
-def tc(surface, texto, fonte, cor, cx, cy):
-    s = fonte.render(texto, True, cor)
-    surface.blit(s, s.get_rect(center=(cx, cy)))
 
-def tl(surface, texto, fonte, cor, x, cy):
-    s = fonte.render(texto, True, cor)
-    surface.blit(s, s.get_rect(midleft=(x, cy)))
+def t_horarios():
+    while True:
+        time.sleep(INTERVALO_CHECK)
+        if not e.conectada or e.alarme_ativo:
+            continue
+        buscar()
+        agora = datetime.now()
+        ha = agora.strftime("%H:%M")
+        for med in e.agenda:
+            hmed = med.get("horario", "")
+            ch = f"{med['nome']}_{hmed}_{agora.strftime('%Y%m%d_%H%M')}"
+            if ha == hmed and ch not in e.alertados:
+                cat = med.get("categoria", "normal")
+                if nsono(ha, e.config) and cat == "normal":
+                    e.alertados.add(ch)
+                    continue
+                e.alertados.add(ch)
+                alarmar(med)
+                break
 
-def truncar(t, m): return t[:m-2]+".." if len(t)>m else t
 
-# --- TELAS ---
+def t_realarme():
+    while True:
+        time.sleep(10)
+        if not e.alarme_ativo or e.alarme_tomou:
+            continue
+        if e.alarme_viu and not e.alarme_tomou:
+            if (datetime.now() - e.alarme_inicio).total_seconds() >= TEMPO_REALARME:
+                e.vibrando = True
+                e.alarme_viu = False
+                e.alarme_inicio = datetime.now()
+                e.ciclo = 0
 
-def desenhar_setup(surface):
-    surface.fill(BG_DEEP)
-    cx = LARGURA // 2
-    
-    # Ícone e Texto
-    pygame.draw.circle(surface, AZUL_ICE, (cx, 30), 4)
-    pygame.draw.arc(surface, BRANCO, (cx-15, 15, 30, 30), 0.6, 2.5, 3)
-    
-    rounded_rect(surface, BG_CARD, (5, 55, 118, 100), radius=10)
-    tc(surface, "Rede Wi-Fi:", fonte_mini, CINZA_CLARO, cx, 65)
-    tc(surface, "PULSEIRA", fonte_dado, AZUL_ICE, cx, 80)
-    tc(surface, "Senha:", fonte_mini, CINZA_CLARO, cx, 100)
-    rounded_rect(surface, (40, 40, 10), (20, 108, 88, 20), radius=5)
-    tc(surface, "12345678", fonte_dado, AMARELO_OURO, cx, 118)
-    
-    # Instrução de tecla
-    if erro_conexao:
-        tc(surface, "ERRO AO CONECTAR!", fonte_titulo, VERMELHO_ERRO, cx, 145)
+
+def prox():
+    if not e.agenda:
+        return None
+    ha = datetime.now().strftime("%H:%M")
+    at = sorted([m for m in e.agenda if m.get("ativo", True)], key=lambda m: m.get("horario", ""))
+    for m in at:
+        if m.get("horario", "") >= ha:
+            return m
+    return at[0] if at else None
+
+
+# =============================================
+#  DESENHO
+# =============================================
+
+def tx(tela, texto, x, y, tam=12, cor=COR_BRANCO, centro=False, bold=False):
+    try:
+        f = pygame.font.SysFont("arial", tam * ESCALA, bold=bold)
+    except:
+        f = pygame.font.Font(None, tam * ESCALA)
+    s = f.render(texto, True, cor)
+    if centro:
+        r = s.get_rect(center=(x * ESCALA, y * ESCALA))
+        tela.blit(s, r)
     else:
-        tc(surface, "[W] Conectar", fonte_mini, CINZA_ESCURO, cx, 145)
+        tela.blit(s, (x * ESCALA, y * ESCALA))
 
-def desenhar_sync(surface):
-    # Tela de carregamento
-    surface.fill(BG_DEEP)
-    cx = LARGURA // 2
-    cy = ALTURA // 2
-    
-    # Animação de loading
-    t = pygame.time.get_ticks()
-    pontos = "." * ((t // 500) % 4)
-    
-    tc(surface, "CONECTANDO", fonte_titulo, AZUL_ICE, cx, cy - 20)
-    tc(surface, "AO SERVIDOR", fonte_titulo, AZUL_ICE, cx, cy)
-    tc(surface, pontos, fonte_hora, BRANCO, cx, cy + 30)
 
-def desenhar_relogio(surface):
-    surface.fill(BG_DEEP)
-    agora = datetime.datetime.now()
-    
-    # Barra Status
-    rounded_rect(surface, (30,40,50), (0,0,LARGURA,18), radius=0)
-    
-    if erro_conexao:
-        tc(surface, "OFFLINE", fonte_mini, VERMELHO_ERRO, 25, 9)
+def retangulo(tela, x, y, w, h, cor, raio=4):
+    r = pygame.Rect(x * ESCALA, y * ESCALA, w * ESCALA, h * ESCALA)
+    pygame.draw.rect(tela, cor, r, border_radius=raio * ESCALA)
+    return r
+
+
+def bt(tela, texto, x, y, w, h, cor, cor_h, mp, cor_texto=COR_BRANCO):
+    r = pygame.Rect(x * ESCALA, y * ESCALA, w * ESCALA, h * ESCALA)
+    c = cor_h if r.collidepoint(mp) else cor
+    pygame.draw.rect(tela, c, r, border_radius=8 * ESCALA)
+    tx(tela, texto, x + w // 2, y + h // 2, 11, cor_texto, centro=True, bold=True)
+    return r
+
+
+def barra_topo(tela):
+    retangulo(tela, 0, 0, REAL_W, 14, COR_BARRA)
+    agora = datetime.now()
+    tx(tela, agora.strftime("%H:%M"), 4, 1, 8, COR_CINZA)
+
+    # Indicador conexao
+    cor_c = COR_VERDE if e.conectada else COR_VERMELHO
+    pygame.draw.circle(tela, cor_c, ((REAL_W - 10) * ESCALA, 7 * ESCALA), 4 * ESCALA)
+
+
+# =============================================
+#  TELAS
+# =============================================
+
+def tela_inicio(tela, mp):
+    tela.fill(COR_FUNDO)
+
+    # Logo area
+    retangulo(tela, 14, 25, 100, 50, COR_FUNDO_CARD, 8)
+    tx(tela, "PINAID", REAL_W // 2, 40, 20, COR_AZUL, centro=True, bold=True)
+    tx(tela, "Cuidado Inteligente", REAL_W // 2, 60, 8, COR_CINZA, centro=True)
+
+    # Status
+    cor = COR_VERDE if e.conectada else COR_VERMELHO
+    tx(tela, "Conectado" if e.conectada else "Desconectado", REAL_W // 2, 90, 9, cor, centro=True)
+
+    # Botao
+    b = bt(tela, "CONECTAR", 18, 110, 92, 32, COR_AZUL, COR_AZUL_HOVER, mp)
+
+    return {"conectar": b}
+
+
+def tela_relogio(tela, mp):
+    tela.fill(COR_FUNDO)
+    barra_topo(tela)
+    agora = datetime.now()
+
+    # Hora principal
+    tx(tela, agora.strftime("%H:%M"), REAL_W // 2, 35, 28, COR_BRANCO, centro=True, bold=True)
+
+    # Data
+    tx(tela, agora.strftime("%d/%m/%Y"), REAL_W // 2, 52, 8, COR_CINZA, centro=True)
+
+    # Card proximo remedio
+    retangulo(tela, 8, 62, 112, 58, COR_FUNDO_CARD, 6)
+
+    p = prox()
+    if p:
+        tx(tela, "PROXIMO", REAL_W // 2, 70, 7, COR_CINZA, centro=True)
+
+        nome = p["nome"].upper()
+        if len(nome) > 14:
+            nome = nome[:13] + "."
+        tx(tela, nome, REAL_W // 2, 84, 13, COR_AZUL, centro=True, bold=True)
+
+        tx(tela, p["horario"], REAL_W // 2, 100, 14, COR_BRANCO, centro=True, bold=True)
+
+        dose = p.get("dose", "")
+        if len(dose) > 18:
+            dose = dose[:17] + "."
+        tx(tela, dose, REAL_W // 2, 114, 7, COR_CINZA, centro=True)
     else:
-        tc(surface, "ONLINE", fonte_mini, MENTA, 25, 9)
-        
-    tc(surface, "90%", fonte_mini, BRANCO, LARGURA-15, 9)
-    
-    hora = agora.strftime("%H:%M")
-    tc(surface, hora, fonte_hora, BRANCO, LARGURA//2, 50)
-    
-    dias = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"]
-    data = f"{dias[agora.weekday()]}, {agora.day:02d}/{agora.month:02d}"
-    tc(surface, data, fonte_titulo, CINZA_CLARO, LARGURA//2, 85)
-    
-    if soneca_ativa:
-        rounded_rect(surface, LARANJA, (5, 105, 118, 40), radius=8)
-        tc(surface, "PENDENTE!", fonte_titulo, (0,0,0), LARGURA//2, 118)
-        tc(surface, "Toque p/ confirmar", fonte_mini, (0,0,0), LARGURA//2, 132)
-    elif agenda:
-        rounded_rect(surface, (20,30,50), (5, 105, 118, 40), radius=8)
-        tl(surface, "Próximo:", fonte_mini, CINZA_CLARO, 12, 115)
-        tl(surface, truncar(agenda[0]['nome'],12), fonte_titulo, AZUL_ICE, 12, 130)
-        tl(surface, agenda[0]['horario'], fonte_titulo, AMARELO_OURO, 80, 130)
+        tx(tela, "Sem remedios", REAL_W // 2, 88, 10, COR_CINZA, centro=True)
+        tx(tela, "cadastrados", REAL_W // 2, 100, 10, COR_CINZA, centro=True)
+
+    # Nome paciente
+    if e.paciente:
+        tx(tela, e.paciente, REAL_W // 2, 128, 7, COR_CINZA_ESCURO, centro=True)
+
+    # Botao
+    b = bt(tela, "ATUALIZAR", 24, 136, 80, 20, COR_AZUL, COR_AZUL_HOVER, mp)
+
+    return {"sync": b}
+
+
+def tela_alarme(tela, mp):
+    med = e.alarme_med
+
+    if e.vibrando:
+        e.ciclo += 1
+        # Efeito pulsante
+        intensidade = abs(math.sin(e.ciclo * 0.08))
+        r = int(40 + intensidade * 40)
+        tela.fill((r, 10, 10))
     else:
-        # Se a agenda estiver vazia (ainda não baixou ou erro)
-        rounded_rect(surface, BG_CARD, (5, 105, 118, 40), radius=8)
-        tc(surface, "Sem dados", fonte_titulo, CINZA_ESCURO, LARGURA//2, 125)
+        tela.fill(COR_FUNDO)
 
-def desenhar_alerta(surface):
-    piscar = int(datetime.datetime.now().strftime("%S")) % 2 == 0
-    bg = (40, 10, 10) if piscar else BG_DEEP
-    surface.fill(bg)
-    
-    pygame.draw.rect(surface, (0,0,0), (0,0,LARGURA,25))
-    tc(surface, "HORA DO REMÉDIO", fonte_titulo, LARANJA, LARGURA//2, 12)
-    
-    if medicamento_atual:
-        tc(surface, truncar(medicamento_atual['nome'], 12), fonte_med_nome, BRANCO, LARGURA//2, 45)
-        tc(surface, medicamento_atual['dose'], fonte_med_dose, AMARELO_OURO, LARGURA//2, 65)
-        
-    rounded_rect(surface, MENTA, (5, 90, 118, 30), radius=8)
-    tc(surface, "JÁ TOMEI", fonte_botao, (0,0,0), LARGURA//2, 105)
-    
-    y_b = 125
-    rounded_rect(surface, (40,50,70), (5, y_b, 56, 30), radius=8)
-    tc(surface, "FOTO", fonte_titulo, BRANCO, 33, y_b+15)
-    
-    rounded_rect(surface, (80,40,0), (67, y_b, 56, 30), radius=8)
-    tc(surface, "PARAR", fonte_titulo, BRANCO, 95, y_b+15)
+    barra_topo(tela)
 
-def desenhar_foto(surface):
-    surface.fill((0,0,0))
-    if img_medicamento_cache:
-        # Redimensiona para caber na tela
-        img_scaled = pygame.transform.scale(img_medicamento_cache, (LARGURA, ALTURA))
-        surface.blit(img_scaled, (0,0))
+    # Header alarme
+    if e.vibrando:
+        tx(tela, "HORA DO", REAL_W // 2, 24, 10, COR_VERMELHO, centro=True, bold=True)
+        tx(tela, "REMEDIO!", REAL_W // 2, 36, 14, COR_VERMELHO, centro=True, bold=True)
     else:
-        tc(surface, "Carregando...", fonte_titulo, BRANCO, LARGURA//2, ALTURA//2)
+        tx(tela, "REMEDIO", REAL_W // 2, 30, 12, COR_AZUL, centro=True, bold=True)
 
-def desenhar_confirma(surface):
-    surface.fill(MENTA)
-    tc(surface, "REGISTRADO", fonte_med_nome, (0,0,0), LARGURA//2, 80)
-    tc(surface, "COM SUCESSO!", fonte_titulo, (0,0,0), LARGURA//2, 100)
+    # Card info
+    retangulo(tela, 8, 48, 112, 48, COR_FUNDO_CARD, 6)
 
-# ============================================================
-#  LOOP
-# ============================================================
-rodando = True
-while rodando:
-    tela = pygame.Surface((LARGURA, ALTURA))
-    
-    if soneca_ativa and estado_atual == TELA_RELOGIO:
-        if (pygame.time.get_ticks()-tempo_inicio_soneca)/1000 > TEMPO_SONECA_TESTE:
-            estado_atual = TELA_ALERTA; soneca_ativa = False
+    nome = med["nome"].upper()
+    if len(nome) > 14:
+        nome = nome[:13] + "."
+    tx(tela, nome, REAL_W // 2, 58, 14, COR_BRANCO, centro=True, bold=True)
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT: rodando = False
-        if event.type == pygame.KEYDOWN:
-            
-            # --- SETUP (Conecta ao Wi-Fi e Baixa Dados) ---
-            if estado_atual == TELA_SETUP:
-                if event.key == pygame.K_w:
-                    # Muda para tela de carregamento e força renderização
-                    estado_atual = TELA_SYNC
-            
-            # --- RELOGIO ---
-            elif estado_atual == TELA_RELOGIO:
-                if event.key == pygame.K_SPACE: 
-                    if agenda:
-                        medicamento_atual = agenda[0]
-                        # Tenta baixar a imagem na hora (ou pegar do cache)
-                        img_medicamento_cache = baixar_imagem(medicamento_atual['img_arquivo'])
-                        estado_atual = TELA_ALERTA
-                        soneca_ativa = False
-                    else:
-                        print("[AVISO] Agenda vazia! Sincronize primeiro.")
-                
-                elif soneca_ativa and event.key == pygame.K_s:
-                     enviar_confirmacao(medicamento_atual) # Envia para Nuvem
-                     estado_atual = TELA_CONFIRMADO; inicio_confirmacao = pygame.time.get_ticks()
+    tx(tela, med["horario"], REAL_W // 2, 76, 14, COR_AZUL, centro=True, bold=True)
 
-            # --- ALERTA ---
-            elif estado_atual == TELA_ALERTA:
-                if event.key == pygame.K_s: 
-                    enviar_confirmacao(medicamento_atual) # Envia para Nuvem
-                    estado_atual = TELA_CONFIRMADO; inicio_confirmacao = pygame.time.get_ticks()
-                elif event.key == pygame.K_a: 
-                    estado_atual = TELA_FOTO_FULL
-                elif event.key == pygame.K_d: 
-                    estado_atual = TELA_RELOGIO; soneca_ativa = True; tempo_inicio_soneca = pygame.time.get_ticks()
+    dose = med.get("dose", "")
+    if len(dose) > 20:
+        dose = dose[:19] + "."
+    tx(tela, dose, REAL_W // 2, 90, 7, COR_CINZA, centro=True)
 
-            elif estado_atual == TELA_FOTO_FULL: estado_atual = TELA_ALERTA
+    botoes = {}
 
-    # Lógica de Sincronização (Executada fora do loop de eventos para não travar o clique, mas aqui simplificada)
-    if estado_atual == TELA_SYNC:
-        desenhar_sync(tela)
-        # Renderiza o frame de "Conectando..." antes de travar no download
-        frame = pygame.transform.scale(tela, (LARGURA*SCALE, ALTURA*SCALE))
-        tela_display.blit(frame, (0,0))
+    if e.vibrando:
+        botoes["ja_vi"] = bt(tela, "JA VI", 10, 106, 108, 28, COR_AMARELO, COR_AMARELO_HOVER, mp, (20, 20, 20))
+        tx(tela, "Toque para parar", REAL_W // 2, 144, 7, COR_CINZA, centro=True)
+    else:
+        botoes["tomei"] = bt(tela, "JA TOMEI", 10, 106, 108, 28, COR_VERDE, COR_VERDE_HOVER, mp)
+
+        if e.alarme_inicio:
+            t = max(0, TEMPO_REALARME - (datetime.now() - e.alarme_inicio).total_seconds())
+            m = int(t // 60)
+            s = int(t % 60)
+            tx(tela, f"Volta em {m}:{s:02d}", REAL_W // 2, 144, 9, COR_VERMELHO, centro=True, bold=True)
+
+    return botoes
+
+
+def tela_ok(tela, mp):
+    tela.fill(COR_FUNDO)
+    barra_topo(tela)
+
+    med = e.alarme_med
+
+    # Circulo de confirmacao
+    centro_x = REAL_W // 2 * ESCALA
+    centro_y = 50 * ESCALA
+    pygame.draw.circle(tela, COR_VERDE, (centro_x, centro_y), 20 * ESCALA, 3 * ESCALA)
+
+    # Check mark
+    pontos = [
+        (centro_x - 10 * ESCALA, centro_y),
+        (centro_x - 3 * ESCALA, centro_y + 8 * ESCALA),
+        (centro_x + 12 * ESCALA, centro_y - 8 * ESCALA),
+    ]
+    pygame.draw.lines(tela, COR_VERDE, False, pontos, 3 * ESCALA)
+
+    tx(tela, "TOMADO!", REAL_W // 2, 80, 16, COR_VERDE, centro=True, bold=True)
+
+    if med:
+        nome = med["nome"].upper()
+        if len(nome) > 14:
+            nome = nome[:13] + "."
+        tx(tela, nome, REAL_W // 2, 100, 12, COR_BRANCO, centro=True, bold=True)
+        tx(tela, datetime.now().strftime("%H:%M"), REAL_W // 2, 116, 12, COR_CINZA, centro=True)
+
+    b = bt(tela, "VOLTAR", 24, 132, 80, 22, COR_AZUL, COR_AZUL_HOVER, mp)
+
+    return {"voltar": b}
+
+
+# =============================================
+#  MAIN
+# =============================================
+
+def main():
+    pygame.init()
+    tela = pygame.display.set_mode((LARGURA, ALTURA))
+    pygame.display.set_caption(f"Pinaid {REAL_W}x{REAL_H}")
+    clock = pygame.time.Clock()
+
+    threading.Thread(target=t_horarios, daemon=True).start()
+    threading.Thread(target=t_realarme, daemon=True).start()
+
+    print(f"PINAID Mock {REAL_W}x{REAL_H} x{ESCALA} | T=teste S=sync")
+
+    rodando = True
+    while rodando:
+        mp = pygame.mouse.get_pos()
+        b = {}
+        e.frame += 1
+
+        if e.tela == "inicio":
+            b = tela_inicio(tela, mp)
+        elif e.tela == "relogio":
+            b = tela_relogio(tela, mp)
+        elif e.tela == "alarme":
+            b = tela_alarme(tela, mp)
+        elif e.tela == "ok":
+            b = tela_ok(tela, mp)
+
+        for ev in pygame.event.get():
+            if ev.type == pygame.QUIT:
+                rodando = False
+            if ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+                if "conectar" in b and b["conectar"].collidepoint(ev.pos):
+                    if buscar():
+                        e.tela = "relogio"
+                if "sync" in b and b["sync"].collidepoint(ev.pos):
+                    buscar()
+                if "ja_vi" in b and b["ja_vi"].collidepoint(ev.pos):
+                    e.vibrando = False
+                    e.alarme_viu = True
+                    e.alarme_inicio = datetime.now()
+                if "tomei" in b and b["tomei"].collidepoint(ev.pos):
+                    e.alarme_tomou = True
+                    e.alarme_ativo = False
+                    e.vibrando = False
+                    confirmar(e.alarme_med)
+                    e.tela = "ok"
+                if "voltar" in b and b["voltar"].collidepoint(ev.pos):
+                    e.tela = "relogio"
+                    e.alarme_med = None
+            if ev.type == pygame.KEYDOWN:
+                if ev.key == pygame.K_t and e.agenda and not e.alarme_ativo:
+                    alarmar(e.agenda[0])
+                if ev.key == pygame.K_s:
+                    buscar()
+
         pygame.display.flip()
-        
-        # Faz o download real
-        sucesso = sincronizar_dados()
-        pygame.time.wait(1000) # Só para ver a animação
-        if sucesso:
-            estado_atual = TELA_RELOGIO
-        else:
-            estado_atual = TELA_SETUP # Volta para tentar de novo
+        clock.tick(FPS)
 
-    # Renderização Normal
-    elif estado_atual == TELA_SETUP: desenhar_setup(tela)
-    elif estado_atual == TELA_RELOGIO: desenhar_relogio(tela)
-    elif estado_atual == TELA_ALERTA: desenhar_alerta(tela)
-    elif estado_atual == TELA_FOTO_FULL: desenhar_foto(tela)
-    elif estado_atual == TELA_CONFIRMADO: 
-        desenhar_confirma(tela)
-        if pygame.time.get_ticks()-inicio_confirmacao > 2000: estado_atual = TELA_RELOGIO
+    pygame.quit()
+    sys.exit()
 
-    if estado_atual != TELA_SYNC: # Já renderizamos o sync acima
-        frame = pygame.transform.scale(tela, (LARGURA*SCALE, ALTURA*SCALE))
-        tela_display.blit(frame, (0,0))
-        pygame.display.flip()
-        clock.tick(30)
 
-pygame.quit()
+if __name__ == "__main__":
+    main()

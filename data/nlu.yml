@@ -41,3 +41,9 @@ nlu:
     - verificar horário
     - estou no horário?
     - quando é o próximo?
+
+- intent: informar_medicamento
+  examples: |
+    - agendar [Losartana](medicamento) as [14:00](horario) dose [50mg](dose)
+    - tomar [Dipirona](medicamento) [20h](horario) [1 comprimido](dose)
+    - lembrar de [Aspirina](medicamento) as [8 da manha](horario) [2 gotas](dose)

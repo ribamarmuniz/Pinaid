@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinaid - Central do Cuidador</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a3a5c 0%, #2d6a9f 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 10px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 520px;
+            height: 95vh;
+            max-height: 750px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a5276, #2e86c1);
+            color: white;
+            padding: 18px 25px;
+            text-align: center;
+        }
+        .header h1 { font-size: 22px; margin-bottom: 4px; letter-spacing: 1px; }
+        .header p { font-size: 13px; opacity: 0.85; }
+        .status-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: #58d68d;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f5f7fa;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scroll-behavior: smooth;
+        }
+        .messages::-webkit-scrollbar { width: 5px; }
+        .messages::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+        .msg {
+            padding: 12px 16px;
+            border-radius: 16px;
+            max-width: 85%;
+            font-size: 14px;
+            line-height: 1.6;
+            word-wrap: break-word;
+            animation: fadeIn 0.25s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bot {
+            align-self: flex-start;
+            background-color: #ffffff;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #1a5276, #2e86c1);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .typing {
+            align-self: flex-start;
+            padding: 12px 18px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+            font-size: 18px;
+            color: #999;
+            display: none;
+            letter-spacing: 3px;
+        }
+        .typing span { display: inline-block; animation: blink 1.4s infinite; }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+
+        .timestamp {
+            font-size: 11px;
+            color: #aaa;
+            text-align: center;
+            margin: 3px 0;
+        }
+
+        .input-area {
+            padding: 15px 20px;
+            background: #ffffff;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+        input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+        input:focus { border-color: #2e86c1; }
+        input::placeholder { color: #bbb; }
+
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #1a5276, #2e86c1);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.3s;
+        }
+        button:hover {
+            transform: scale(1.03);
+            box-shadow: 0 3px 12px rgba(26, 82, 118, 0.4);
+        }
+        button:active { transform: scale(0.97); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        @media (max-width: 520px) {
+            .chat-container { height: 100vh; max-height: none; border-radius: 0; }
+            body { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="header">
+        <h1>PINAID</h1>
+        <p><span class="status-dot"></span>Assistente de Medicamentos</p>
+    </div>
+
+    <div class="messages" id="chat-box">
+        <div class="timestamp" id="welcome-time"></div>
+        <div class="msg bot">
+            Bem-vindo ao <b>Pinaid</b>!<br><br>
+            Antes de comecar, qual o <b>nome do paciente</b>?
+        </div>
+        <div class="typing" id="typing-indicator">
+            <span>.</span><span>.</span><span>.</span>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Digite aqui..." onkeypress="handleEnter(event)" autocomplete="off">
+        <button id="send-btn" onclick="sendMessage()">Enviar</button>
+    </div>
+</div>
+
+<script>
+    document.getElementById('welcome-time').textContent = getTime();
+
+    function getTime() {
+        return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById("user-input");
+        const btn = document.getElementById("send-btn");
+        const text = input.value.trim();
+        if (!text) return;
+
+        addMessage(text, 'user');
+        input.value = "";
+        input.focus();
+        btn.disabled = true;
+        showTyping(true);
+
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            });
+            if (!response.ok) throw new Error("Erro HTTP: " + response.status);
+            const data = await response.json();
+            await delay(300 + Math.random() * 400);
+            addMessage(data.reply, 'bot');
+        } catch (e) {
+            addMessage("Erro ao conectar com o servidor.", 'bot');
+        } finally {
+            showTyping(false);
+            btn.disabled = false;
+        }
+    }
+
+    function addMessage(text, sender) {
+        const box = document.getElementById("chat-box");
+        const typing = document.getElementById("typing-indicator");
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "timestamp";
+        timeDiv.textContent = getTime();
+        const div = document.createElement("div");
+        div.className = "msg " + sender;
+        div.innerHTML = text;
+        box.insertBefore(timeDiv, typing);
+        box.insertBefore(div, typing);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function showTyping(show) {
+        const el = document.getElementById("typing-indicator");
+        el.style.display = show ? 'block' : 'none';
+        if (show) document.getElementById("chat-box").scrollTop = document.getElementById("chat-box").scrollHeight;
+    }
+
+    function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+    function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
+</script>
+
+</body>
+</html>

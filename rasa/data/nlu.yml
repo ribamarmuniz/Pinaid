@@ -1,0 +1,556 @@
+version: "3.1"
+
+nlu:
+- intent: saudacao
+  examples: |
+    - oi
+    - ola
+    - bom dia
+    - boa tarde
+    - boa noite
+    - hey
+    - eae
+    - hello
+    - oi tudo bem
+    - ola como vai
+    - bom dia pinaid
+    - boa tarde pinaid
+    - boa noite pinaid
+    - e ai
+    - fala
+    - salve
+    - opa
+    - oi oi
+    - oie
+    - ola boa tarde
+    - oi pode me ajudar
+    - ola preciso de ajuda
+
+- intent: menu
+  examples: |
+    - menu
+    - inicio
+    - opcoes
+    - voltar ao menu
+    - menu principal
+    - ver menu
+    - mostrar menu
+    - ir para menu
+    - quero o menu
+    - abrir menu
+    - volta pro menu
+    - me mostra o menu
+    - quais as opcoes
+
+- intent: ajuda
+  examples: |
+    - ajuda
+    - help
+    - como funciona
+    - me ajuda
+    - preciso de ajuda
+    - como usar
+    - o que voce faz
+    - quais sao as opcoes
+    - nao sei o que fazer
+    - como cadastrar
+    - instrucoes
+    - tutorial
+    - como funciona isso
+    - explica pra mim
+    - nao entendo como usar
+
+- intent: cadastrar
+  examples: |
+    - cadastrar
+    - cadastrar remedio
+    - novo remedio
+    - adicionar remedio
+    - add remedio
+    - incluir remedio
+    - inserir remedio
+    - quero cadastrar
+    - cadastrar medicamento
+    - novo medicamento
+    - adicionar medicamento
+    - quero adicionar um remedio
+    - preciso cadastrar um remedio
+    - registrar remedio
+    - 1
+    - quero registrar um medicamento
+    - tenho um remedio novo
+    - vou adicionar remedio
+
+- intent: cadastro_rapido
+  examples: |
+    - [Losartana](nome_remedio) [08:00](horario) [50mg](dose)
+    - [Dipirona](nome_remedio) [10:00](horario) [500mg](dose)
+    - [Amoxicilina](nome_remedio) [07:30](horario) [875mg](dose)
+    - [Paracetamol](nome_remedio) [14:00](horario) [750mg](dose)
+    - [Ibuprofeno](nome_remedio) [09:00](horario) [400mg](dose)
+    - [Rivotril](nome_remedio) [22:00](horario) [2mg](dose)
+    - [Metformina](nome_remedio) [12:00](horario) [850mg](dose)
+    - [Omeprazol](nome_remedio) [06:00](horario) [20mg](dose)
+    - [Atenolol](nome_remedio) [08:00](horario) [25mg](dose)
+    - [Sinvastatina](nome_remedio) [21:00](horario) [40mg](dose)
+    - [Captopril](nome_remedio) [07:00](horario) [25mg](dose)
+    - [Fluoxetina](nome_remedio) [08:00](horario) [20mg](dose)
+    - [Diclofenaco](nome_remedio) [12:00](horario) [50mg](dose)
+    - [Azitromicina](nome_remedio) [10:00](horario) [500mg](dose)
+
+- intent: cadastro_descricao
+  examples: |
+    - preciso tomar [Dipirona](nome_remedio) [500mg](dose) a cada 8 horas
+    - tomo [Losartana](nome_remedio) [50mg](dose) uma vez por dia
+    - medico receitou [Amoxicilina](nome_remedio) [875mg](dose) de 12 em 12 horas
+    - devo tomar [Paracetamol](nome_remedio) [750mg](dose) 3 vezes ao dia
+    - tenho que tomar [Rivotril](nome_remedio) [2mg](dose) antes de dormir
+    - remedio e [Metformina](nome_remedio) [850mg](dose) 2 comprimidos por dia
+    - tomar [Omeprazol](nome_remedio) [20mg](dose) em jejum as 6h
+    - 8
+    - meu medico passou [Captopril](nome_remedio) [25mg](dose) 2 vezes ao dia
+    - preciso tomar remedio de pressao [Losartana](nome_remedio) [50mg](dose)
+    - tomo [Fluoxetina](nome_remedio) [20mg](dose) de manha
+    - fui receitado [Azitromicina](nome_remedio) [500mg](dose) a cada 24 horas
+
+- intent: listar
+  examples: |
+    - listar
+    - lista
+    - ver remedios
+    - meus remedios
+    - mostrar remedios
+    - agenda
+    - ver medicamentos
+    - quais remedios tenho
+    - mostrar tudo
+    - ver todos
+    - listar medicamentos
+    - 2
+    - quero ver meus remedios
+    - mostra os remedios cadastrados
+    - quais medicamentos estao cadastrados
+
+- intent: editar
+  examples: |
+    - editar
+    - editar remedio
+    - alterar remedio
+    - mudar remedio
+    - trocar remedio
+    - modificar remedio
+    - quero editar
+    - alterar medicamento
+    - editar [Losartana](nome_remedio)
+    - editar [1](id_remedio)
+    - mudar horario
+    - 3
+    - quero mudar um remedio
+    - preciso alterar o horario
+    - trocar a dose
+
+- intent: remover
+  examples: |
+    - remover
+    - remover remedio
+    - deletar remedio
+    - excluir remedio
+    - apagar remedio
+    - tirar remedio
+    - quero remover
+    - deletar [Losartana](nome_remedio)
+    - remover [1](id_remedio)
+    - excluir medicamento
+    - 4
+    - quero tirar um remedio
+    - apagar medicamento
+    - nao preciso mais desse remedio
+
+- intent: proximo
+  examples: |
+    - proximo
+    - proximo remedio
+    - qual o proximo
+    - proximo medicamento
+    - quando tomar
+    - qual remedio agora
+    - proximo horario
+    - 5
+    - qual o proximo remedio
+    - quando e o proximo
+    - que horas tomo o proximo
+    - tem remedio agora
+
+- intent: pausar_reativar
+  examples: |
+    - pausar ou reativar
+    - pausar reativar
+    - gerenciar ativos
+    - 6
+
+- intent: pausar
+  examples: |
+    - pausar
+    - pausar remedio
+    - parar remedio
+    - suspender remedio
+    - desativar remedio
+    - pausar [Losartana](nome_remedio)
+    - pausar [1](id_remedio)
+    - quero pausar
+    - suspender medicamento
+    - parar de tomar
+
+- intent: reativar
+  examples: |
+    - reativar
+    - reativar remedio
+    - ativar remedio
+    - retomar remedio
+    - reativar [Losartana](nome_remedio)
+    - reativar [1](id_remedio)
+    - quero reativar
+    - voltar a tomar
+
+- intent: configurar_sono
+  examples: |
+    - configurar sono
+    - horario de sono
+    - sono
+    - dormir
+    - horario dormir
+    - quando durmo
+    - configurar horario de dormir
+    - mudar sono
+    - alterar sono
+    - 7
+    - a que horas durmo
+    - quero mudar o horario de sono
+    - horario de dormir e acordar
+
+- intent: buscar
+  examples: |
+    - buscar
+    - buscar remedio
+    - procurar remedio
+    - encontrar remedio
+    - buscar [Losartana](nome_remedio)
+    - procurar [Dipirona](nome_remedio)
+    - encontrar [Amoxicilina](nome_remedio)
+    - 9
+    - achar remedio
+    - onde esta o remedio
+
+- intent: historico
+  examples: |
+    - historico
+    - historico de doses
+    - doses tomadas
+    - registro
+    - ver historico
+    - mostrar historico
+    - h
+    - quais doses foram tomadas
+    - registro de medicamentos
+    - ver registro
+
+- intent: status
+  examples: |
+    - status
+    - resumo
+    - como esta
+    - situacao
+    - ver status
+    - resumo geral
+    - como estao os remedios
+
+- intent: limpar
+  examples: |
+    - limpar
+    - apagar tudo
+    - resetar
+    - limpar tudo
+    - remover todos
+    - zerar tudo
+    - apagar todos os remedios
+
+- intent: agradecimento
+  examples: |
+    - obrigado
+    - obrigada
+    - valeu
+    - brigado
+    - vlw
+    - muito obrigado
+    - agradeco
+    - thanks
+    - obrigado pela ajuda
+    - valeu demais
+    - muito obrigada
+    - agradecido
+
+- intent: confirmar_sim
+  examples: |
+    - sim
+    - s
+    - ok
+    - confirmo
+    - isso
+    - correto
+    - pode confirmar
+    - ta certo
+    - sim confirmar
+    - positivo
+    - afirmativo
+    - exato
+    - isso mesmo
+    - confirma
+    - pode ser
+    - ta bom
+
+- intent: confirmar_nao
+  examples: |
+    - nao
+    - n
+    - errado
+    - incorreto
+    - nao confirmo
+    - negativo
+    - editar
+    - corrigir
+    - trocar
+    - mudar
+    - ta errado
+    - nao esta certo
+    - quero corrigir
+
+- intent: cancelar
+  examples: |
+    - cancelar
+    - sair
+    - voltar
+    - desistir
+    - parar
+    - cancela
+    - volta
+    - nao quero mais
+    - deixa pra la
+    - esquece
+    - nao precisa
+    - para tudo
+
+- intent: informar_nome
+  examples: |
+    - [Losartana](nome_pessoa)
+    - [Maria](nome_pessoa)
+    - [Joao](nome_pessoa)
+    - [Carlos](nome_pessoa)
+    - [Ana](nome_pessoa)
+    - [Pedro](nome_pessoa)
+    - meu nome e [Maria](nome_pessoa)
+    - o nome e [Carlos](nome_pessoa)
+    - chamo [Ana](nome_pessoa)
+    - [Jose](nome_pessoa)
+    - [Francisco](nome_pessoa)
+    - [Antonia](nome_pessoa)
+    - [Roberto](nome_pessoa)
+    - [Lucia](nome_pessoa)
+    - [Fernando](nome_pessoa)
+    - [Mariana](nome_pessoa)
+    - o paciente se chama [Antonio](nome_pessoa)
+    - nome do paciente e [Rosa](nome_pessoa)
+
+- intent: informar_horario
+  examples: |
+    - [08:00](horario)
+    - [10:30](horario)
+    - [14:00](horario)
+    - [22:00](horario)
+    - [06:00](horario)
+    - [07:30](horario)
+    - [23:00](horario)
+    - [07:00](horario)
+    - as [08:00](horario)
+    - [8h](horario)
+    - [10h30](horario)
+    - [0800](horario)
+    - [20:00](horario)
+    - [15:00](horario)
+    - [18:30](horario)
+    - [09:00](horario)
+    - [11:00](horario)
+
+- intent: informar_dose
+  examples: |
+    - [500mg](dose)
+    - [50mg](dose)
+    - [875mg](dose)
+    - [750mg](dose)
+    - [20mg](dose)
+    - [10ml](dose)
+    - [2mg](dose)
+    - [100mg](dose)
+    - [25mg](dose)
+    - [40mg](dose)
+    - [5mg](dose)
+    - [1g](dose)
+    - [200mg](dose)
+
+- intent: informar_numero
+  examples: |
+    - [1](numero)
+    - [2](numero)
+    - [3](numero)
+    - [4](numero)
+    - [5](numero)
+    - [6](numero)
+    - [7](numero)
+    - [8](numero)
+    - [9](numero)
+    - [10](numero)
+    - [12](numero)
+    - [0](numero)
+
+- intent: informar_texto
+  examples: |
+    - tomar em jejum
+    - tomar com agua
+    - antes das refeicoes
+    - depois do almoco
+    - com comida
+    - nao mastigar
+    - sublingual
+    - via oral
+    - antes de dormir
+    - apos o cafe
+
+- intent: informar_categoria
+  examples: |
+    - essencial
+    - normal
+    - categoria essencial
+    - categoria normal
+    - e essencial
+    - e normal
+
+- intent: informar_tipo_dose
+  examples: |
+    - comprimido
+    - capsula
+    - gotas
+    - liquido
+    - injecao
+    - outro
+
+- intent: informar_modo_dose
+  examples: |
+    - doses por dia
+    - intervalo fixo
+    - por dia
+    - a cada tantas horas
+    - distribuir no dia
+    - de tantas em tantas horas
+
+- intent: pular
+  examples: |
+    - pular
+    - sem
+    - nenhuma
+    - nao tem
+    - sem observacao
+    - sem foto
+    - nao quero
+    - passa
+    - skip
+    - nenhum
+    - nada
+
+- intent: conversa_geral
+  examples: |
+    - como voce esta
+    - tudo bem
+    - tudo bom
+    - como vai
+    - o que voce acha
+    - voce gosta de remedios
+    - que dia e hoje
+    - que horas sao
+    - voce e inteligente
+    - voce entende tudo
+    - fala algo legal
+    - me conta uma coisa
+    - voce e um robo
+    - esta chovendo
+    - que calor
+    - to cansado
+    - to com sono
+    - estou bem
+    - estou mal
+
+- intent: pergunta_saude
+  examples: |
+    - posso tomar dois remedios juntos
+    - esse remedio tem efeito colateral
+    - e perigoso misturar remedios
+    - posso tomar com leite
+    - pode tomar em jejum
+    - faz mal tomar remedio com cafe
+    - qual o melhor horario pra tomar remedio
+    - remedio vencido faz mal
+    - esqueci de tomar o remedio
+    - o que acontece se esquecer a dose
+    - posso partir o comprimido
+    - posso abrir a capsula
+
+- intent: despedida
+  examples: |
+    - tchau
+    - ate mais
+    - ate logo
+    - bye
+    - falou
+    - xau
+    - ate amanha
+    - vou indo
+    - tenho que ir
+    - nos vemos
+
+- intent: elogio
+  examples: |
+    - muito bom
+    - excelente
+    - otimo
+    - perfeito
+    - adorei
+    - que legal
+    - maravilhoso
+    - voce e demais
+    - gostei muito
+    - ficou otimo
+    - show
+    - top
+
+- intent: reclamacao
+  examples: |
+    - nao gostei
+    - ta ruim
+    - horrivel
+    - nao funciona
+    - ta errado
+    - isso ta pessimo
+    - nao serviu
+    - que porcaria
+    - nao ta bom
+
+- intent: quem_e_voce
+  examples: |
+    - quem e voce
+    - o que voce e
+    - voce e um bot
+    - voce e humano
+    - qual seu nome
+    - como voce se chama
+    - me fala sobre voce
+    - o que e o pinaid
+    - pra que serve isso
+    - qual a funcao do sistema

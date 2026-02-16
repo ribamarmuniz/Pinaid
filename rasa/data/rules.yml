@@ -1,0 +1,192 @@
+version: "3.1"
+
+rules:
+- rule: processar saudacao
+  steps:
+    - intent: saudacao
+    - action: action_processar_mensagem
+
+- rule: processar menu
+  steps:
+    - intent: menu
+    - action: action_processar_mensagem
+
+- rule: processar cadastrar
+  steps:
+    - intent: cadastrar
+    - action: action_processar_mensagem
+
+- rule: processar listar
+  steps:
+    - intent: listar
+    - action: action_processar_mensagem
+
+- rule: processar editar
+  steps:
+    - intent: editar
+    - action: action_processar_mensagem
+
+- rule: processar remover
+  steps:
+    - intent: remover
+    - action: action_processar_mensagem
+
+- rule: processar proximo
+  steps:
+    - intent: proximo
+    - action: action_processar_mensagem
+
+- rule: processar pausar
+  steps:
+    - intent: pausar
+    - action: action_processar_mensagem
+
+- rule: processar reativar
+  steps:
+    - intent: reativar
+    - action: action_processar_mensagem
+
+- rule: processar pausar_reativar
+  steps:
+    - intent: pausar_reativar
+    - action: action_processar_mensagem
+
+- rule: processar sono
+  steps:
+    - intent: configurar_sono
+    - action: action_processar_mensagem
+
+- rule: processar buscar
+  steps:
+    - intent: buscar
+    - action: action_processar_mensagem
+
+- rule: processar historico
+  steps:
+    - intent: historico
+    - action: action_processar_mensagem
+
+- rule: processar status
+  steps:
+    - intent: status
+    - action: action_processar_mensagem
+
+- rule: processar limpar
+  steps:
+    - intent: limpar
+    - action: action_processar_mensagem
+
+- rule: processar ajuda
+  steps:
+    - intent: ajuda
+    - action: action_processar_mensagem
+
+- rule: processar agradecimento
+  steps:
+    - intent: agradecimento
+    - action: action_processar_mensagem
+
+- rule: processar cadastro rapido
+  steps:
+    - intent: cadastro_rapido
+    - action: action_processar_mensagem
+
+- rule: processar cadastro descricao
+  steps:
+    - intent: cadastro_descricao
+    - action: action_processar_mensagem
+
+- rule: processar confirmar sim
+  steps:
+    - intent: confirmar_sim
+    - action: action_processar_mensagem
+
+- rule: processar confirmar nao
+  steps:
+    - intent: confirmar_nao
+    - action: action_processar_mensagem
+
+- rule: processar cancelar
+  steps:
+    - intent: cancelar
+    - action: action_processar_mensagem
+
+- rule: processar informar nome
+  steps:
+    - intent: informar_nome
+    - action: action_processar_mensagem
+
+- rule: processar informar horario
+  steps:
+    - intent: informar_horario
+    - action: action_processar_mensagem
+
+- rule: processar informar dose
+  steps:
+    - intent: informar_dose
+    - action: action_processar_mensagem
+
+- rule: processar informar numero
+  steps:
+    - intent: informar_numero
+    - action: action_processar_mensagem
+
+- rule: processar informar texto
+  steps:
+    - intent: informar_texto
+    - action: action_processar_mensagem
+
+- rule: processar informar categoria
+  steps:
+    - intent: informar_categoria
+    - action: action_processar_mensagem
+
+- rule: processar informar tipo dose
+  steps:
+    - intent: informar_tipo_dose
+    - action: action_processar_mensagem
+
+- rule: processar informar modo dose
+  steps:
+    - intent: informar_modo_dose
+    - action: action_processar_mensagem
+
+- rule: processar pular
+  steps:
+    - intent: pular
+    - action: action_processar_mensagem
+
+- rule: processar conversa geral
+  steps:
+    - intent: conversa_geral
+    - action: action_processar_mensagem
+
+- rule: processar pergunta saude
+  steps:
+    - intent: pergunta_saude
+    - action: action_processar_mensagem
+
+- rule: processar despedida
+  steps:
+    - intent: despedida
+    - action: action_processar_mensagem
+
+- rule: processar elogio
+  steps:
+    - intent: elogio
+    - action: action_processar_mensagem
+
+- rule: processar reclamacao
+  steps:
+    - intent: reclamacao
+    - action: action_processar_mensagem
+
+- rule: processar quem e voce
+  steps:
+    - intent: quem_e_voce
+    - action: action_processar_mensagem
+
+- rule: fallback
+  steps:
+    - intent: nlu_fallback
+    - action: action_processar_mensagem

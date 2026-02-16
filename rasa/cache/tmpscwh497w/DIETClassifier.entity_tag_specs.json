@@ -1,0 +1,36 @@
+[
+  {
+    "tag_name": "entity",
+    "ids_to_tags": {
+      "1": "B-dose",
+      "2": "I-dose",
+      "3": "L-dose",
+      "4": "U-dose",
+      "5": "B-horario",
+      "6": "I-horario",
+      "7": "L-horario",
+      "8": "U-horario",
+      "9": "B-medicamento",
+      "10": "I-medicamento",
+      "11": "L-medicamento",
+      "12": "U-medicamento",
+      "0": "O"
+    },
+    "tags_to_ids": {
+      "B-dose": 1,
+      "I-dose": 2,
+      "L-dose": 3,
+      "U-dose": 4,
+      "B-horario": 5,
+      "I-horario": 6,
+      "L-horario": 7,
+      "U-horario": 8,
+      "B-medicamento": 9,
+      "I-medicamento": 10,
+      "L-medicamento": 11,
+      "U-medicamento": 12,
+      "O": 0
+    },
+    "num_tags": 13
+  }
+]

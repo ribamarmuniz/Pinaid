@@ -1,0 +1,88 @@
+version: "3.1"
+
+intents:
+  - saudacao
+  - menu
+  - ajuda
+  - cadastrar
+  - cadastro_rapido
+  - cadastro_descricao
+  - listar
+  - editar
+  - remover
+  - proximo
+  - pausar
+  - reativar
+  - pausar_reativar
+  - configurar_sono
+  - buscar
+  - historico
+  - status
+  - limpar
+  - agradecimento
+  - confirmar_sim
+  - confirmar_nao
+  - cancelar
+  - informar_nome
+  - informar_horario
+  - informar_dose
+  - informar_numero
+  - informar_texto
+  - informar_categoria
+  - informar_tipo_dose
+  - informar_modo_dose
+  - pular
+  - conversa_geral
+  - pergunta_saude
+  - despedida
+  - elogio
+  - reclamacao
+  - quem_e_voce
+  - nlu_fallback
+
+entities:
+  - nome_remedio
+  - horario
+  - dose
+  - numero
+  - texto_livre
+  - categoria
+  - tipo_dose
+  - modo_dose
+  - nome_pessoa
+  - id_remedio
+
+slots:
+  sessao_ativa:
+    type: bool
+    initial_value: false
+    influence_conversation: true
+    mappings:
+      - type: custom
+  fluxo_atual:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: custom
+  etapa_atual:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: custom
+  resposta_servidor:
+    type: text
+    influence_conversation: false
+    mappings:
+      - type: custom
+
+responses:
+  utter_default_fallback:
+    - text: "Nao entendi. Digite menu para ver as opcoes."
+
+actions:
+  - action_processar_mensagem
+  - action_default_fallback
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

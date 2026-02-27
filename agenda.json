@@ -1,0 +1,16 @@
+{
+    "medicamentos": [],
+    "configuracoes": {
+        "horario_sono_inicio": "23:00",
+        "horario_sono_fim": "07:00"
+    },
+    "paciente": {
+        "nome": "José",
+        "confirmado": true
+    },
+    "sessao": {
+        "fluxo": null,
+        "etapa": null,
+        "dados_temp": {}
+    }
+}
